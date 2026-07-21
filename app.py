@@ -10,26 +10,10 @@ def load_price_data():
     df.columns = df.columns.str.strip()
     return df
 
-@st.cache_data
-def load_finance_data():
-    df = pd.read_excel("Vehicle Finance Calculator.xlsx")
-    df.columns = df.columns.str.strip()
-    return df
-
 price_df = load_price_data()
-finance_df = load_finance_data()
 
 # ---------------------------------------------------------
-# Debug: Show columns
-# ---------------------------------------------------------
-st.write("### Columns Found in Price List File")
-st.write(price_df.columns.tolist())
-
-st.write("### Columns Found in Finance Calculator File")
-st.write(finance_df.columns.tolist())
-
-# ---------------------------------------------------------
-# Sidebar Filters (based on actual price list columns)
+# Sidebar Vehicle Selection
 # ---------------------------------------------------------
 st.sidebar.title("Vehicle Selection")
 
@@ -54,26 +38,27 @@ selected_option = st.sidebar.selectbox(
 
 filtered_final = filtered_variant[filtered_variant["OTPION CODE"] == selected_option]
 
-if filtered_final.empty:
-    st.error("❌ No matching vehicle found. Please adjust your selections.")
-    st.stop()
-
-vehicle_price = float(filtered_final["PRICE"].values[0])
+vehicle_base_price = float(filtered_final["PRICE"].values[0])
 
 # ---------------------------------------------------------
-# Finance Values (from your finance file)
+# Additional Cost Inputs
 # ---------------------------------------------------------
-down_payment = float(finance_df.loc[0, "Down Payment"])
-loan_amount = float(finance_df.loc[0, "Loan Amount"])
+st.sidebar.title("Additional Costs")
+
+accessories = st.sidebar.number_input("Accessories (AED)", min_value=0.0, value=0.0)
+rmc = st.sidebar.number_input("RMC (AED)", min_value=0.0, value=0.0)
 
 # ---------------------------------------------------------
-# Tenor Selection + Interest Rate Logic
+# Finance Options
 # ---------------------------------------------------------
 st.sidebar.title("Finance Options")
 
 tenor = st.sidebar.slider("Select Tenor (Months)", 1, 24, 12)
+dp_percent = st.sidebar.slider("Down Payment %", 0, 100, 25) / 100
 
-# Interest rate rules
+# ---------------------------------------------------------
+# Interest Rate Logic
+# ---------------------------------------------------------
 if tenor <= 3:
     interest_rate = 0.0
 elif tenor <= 12:
@@ -83,7 +68,47 @@ else:
 
 monthly_rate = interest_rate / 12
 
+# ---------------------------------------------------------
+# VAT Calculations
+# ---------------------------------------------------------
+vat_rate = 0.05
+
+# VAT on base price + accessories + RMC
+vat_total = (vehicle_base_price + accessories + rmc) * vat_rate
+
+# VAT on interest (only if interest > 0)
+if interest_rate == 0:
+    vat_on_interest = 0
+else:
+    vat_on_interest = (vehicle_base_price * interest_rate) * vat_rate
+
+# ---------------------------------------------------------
+# Fees (incl. VAT)
+# ---------------------------------------------------------
+documentation_fee = 210
+mortgage_fee = 105
+mortgage_release_fee = 105
+
+# ---------------------------------------------------------
+# Total Cost for Down Payment
+# ---------------------------------------------------------
+total_cost = (
+    vehicle_base_price +
+    accessories +
+    rmc +
+    vat_total +
+    vat_on_interest +
+    documentation_fee +
+    mortgage_fee +
+    mortgage_release_fee
+)
+
+down_payment = total_cost * dp_percent
+loan_amount = total_cost - down_payment
+
+# ---------------------------------------------------------
 # EMI Calculation
+# ---------------------------------------------------------
 if interest_rate == 0:
     emi = loan_amount / tenor
 else:
@@ -104,15 +129,29 @@ st.write(f"**Variant (SAP):** {selected_variant}")
 st.write(f"**Option Code:** {selected_option}")
 
 st.write("### Price Breakdown")
-st.write(f"**Vehicle Price:** {vehicle_price:,.2f}")
+st.write(f"**Base Price:** {vehicle_base_price:,.2f}")
+st.write(f"**Accessories:** {accessories:,.2f}")
+st.write(f"**RMC:** {rmc:,.2f}")
+st.write(f"**VAT:** {vat_total:,.2f}")
+st.write(f"**VAT on Interest:** {vat_on_interest:,.2f}")
 
-st.write("### Finance Details")
-st.write(f"**Down Payment:** {down_payment:,.2f}")
+st.write("### Fees (incl. VAT)")
+st.write(f"**Documentation Fee:** {documentation_fee:,.2f}")
+st.write(f"**Mortgage Fee:** {mortgage_fee:,.2f}")
+st.write(f"**Mortgage Release Fee:** {mortgage_release_fee:,.2f}")
+
+st.write("### Total Cost")
+st.write(f"**Total Cost:** {total_cost:,.2f}")
+
+st.write("### Down Payment")
+st.write(f"**Down Payment ({dp_percent*100:.0f}%):** {down_payment:,.2f}")
+
+st.write("### Loan Amount")
 st.write(f"**Loan Amount:** {loan_amount:,.2f}")
+
+st.write("### EMI Calculation")
 st.write(f"**Tenor:** {tenor} months")
 st.write(f"**Interest Rate:** {interest_rate*100:.2f}%")
+st.write(f"**Monthly EMI:** {emi:,.2f}")
 
-st.write("### Monthly EMI")
-st.write(f"**EMI:** {emi:,.2f}")
-
-st.success("Calculation Completed Successfully")
+st.success("Finance Calculation Completed Successfully")
