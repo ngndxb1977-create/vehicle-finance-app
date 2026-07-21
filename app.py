@@ -9,35 +9,41 @@ st.set_page_config(
 st.title("🚗 Vehicle Pricing & Financing Calculator")
 
 
-# 1. Load Data from Excel File
+# 1. Load Data from Excel File Dynamically
 @st.cache_data
 def load_data():
     try:
-        # Load vehicles data
-        df_vehicles = pd.read_excel(
-            "Price_LIST_RMC_ACCESSORIES.xlsx", sheet_name="Vehicles"
-        )
+        file_path = "Price_LIST_RMC_ACCESSORIES.xlsx"
+        
+        # Read available sheet names first
+        excel_file = pd.ExcelFile(file_path)
+        sheet_names = excel_file.sheet_names
 
-        # Load optional sheets if available
-        try:
-            df_rmc = pd.read_excel(
-                "Price_LIST_RMC_ACCESSORIES.xlsx", sheet_name="RMC"
-            )
-        except Exception:
+        # Determine which sheet to use for vehicles
+        if "Vehicles" in sheet_names:
+            df_vehicles = pd.read_excel(file_path, sheet_name="Vehicles")
+        else:
+            # Fallback to the very first sheet if 'Vehicles' isn't found
+            df_vehicles = pd.read_excel(file_path, sheet_name=0)
+
+        # Load RMC sheet if present (case-insensitive search)
+        rmc_sheet = next((s for s in sheet_names if s.strip().lower() == "rmc"), None)
+        if rmc_sheet:
+            df_rmc = pd.read_excel(file_path, sheet_name=rmc_sheet)
+        else:
             df_rmc = pd.DataFrame()
 
-        try:
-            df_acc = pd.read_excel(
-                "Price_LIST_RMC_ACCESSORIES.xlsx", sheet_name="Accessories"
-            )
-        except Exception:
+        # Load Accessories sheet if present (case-insensitive search)
+        acc_sheet = next((s for s in sheet_names if s.strip().lower() in ["accessories", "accessory"]), None)
+        if acc_sheet:
+            df_acc = pd.read_excel(file_path, sheet_name=acc_sheet)
+        else:
             df_acc = pd.DataFrame()
 
         return df_vehicles, df_rmc, df_acc
+
     except Exception as e:
-        st.error(
-            f"Error loading Excel file 'Price_LIST_RMC_ACCESSORIES.xlsx': {e}"
-        )
+        st.error(f"Error loading Excel file 'Price_LIST_RMC_ACCESSORIES.xlsx': {e}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
@@ -70,14 +76,10 @@ if not df_vehicles.empty:
         .dropna()
         .unique()
     )
-    selected_variant = st.sidebar.selectbox(
-        "Variant Code", filtered_variants
-    )
+    selected_variant = st.sidebar.selectbox("Variant Code", filtered_variants)
 
     # Number of Units
-    quantity = st.sidebar.number_input(
-        "Number of Units", min_value=1, value=1, step=1
-    )
+    quantity = st.sidebar.number_input("Number of Units", min_value=1, value=1, step=1)
 
     # Retrieve base price for selected vehicle
     matching_rows = df_vehicles[
@@ -118,26 +120,16 @@ if not df_vehicles.empty:
     total_vehicle_price = total_unit_price * quantity
 
     st.sidebar.subheader("🏦 Financing Terms")
-    tenor_months = st.sidebar.selectbox(
-        "Tenor (Months)", options=[12, 24, 36, 48, 60], index=0
-    )
+    tenor_months = st.sidebar.selectbox("Tenor (Months)", options=[12, 24, 36, 48, 60], index=0)
     interest_rate_annual = (
-        st.sidebar.number_input(
-            "Annual Interest Rate (%)", value=5.00, step=0.25
-        )
-        / 100
+        st.sidebar.number_input("Annual Interest Rate (%)", value=5.00, step=0.25) / 100
     )
     dp_percentage = (
-        st.sidebar.slider(
-            "Down Payment (%)", min_value=10, max_value=50, value=25
-        )
-        / 100
+        st.sidebar.slider("Down Payment (%)", min_value=10, max_value=50, value=25) / 100
     )
 
     # Fixed Charges
-    mortgage_release = st.sidebar.number_input(
-        "Mortgage Releasing Charges", value=100.0
-    )
+    mortgage_release = st.sidebar.number_input("Mortgage Releasing Charges", value=100.0)
     mortgage_fee = st.sidebar.number_input("Mortgage Charges", value=100.0)
     doc_fee = st.sidebar.number_input("Documentation Charges", value=200.0)
     vat_rate = 0.05
@@ -176,9 +168,7 @@ if not df_vehicles.empty:
         st.write(f"**Variant Code:** {selected_variant}")
         st.write(f"**Quantity:** {quantity} Unit(s)")
         st.write(f"**Unit Net Price:** AED {total_unit_price:,.2f}")
-        st.write(
-            f"**Total Vehicle Price (Net):** AED {total_vehicle_price:,.2f}"
-        )
+        st.write(f"**Total Vehicle Price (Net):** AED {total_vehicle_price:,.2f}")
 
         st.markdown("---")
         st.subheader("⚙️ Charges & Dynamic Fees")
@@ -198,9 +188,7 @@ if not df_vehicles.empty:
     with col2:
         st.subheader("💳 Financing & Repayment Summary")
         st.write(f"**Down Payment Percentage:** {dp_percentage*100:.0f}%")
-        st.write(
-            f"**Total Down Payment (Inc. VAT):** AED {total_down_payment:,.2f}"
-        )
+        st.write(f"**Total Down Payment (Inc. VAT):** AED {total_down_payment:,.2f}")
         st.write(f"**Net Balance Financed:** AED {balance_due:,.2f}")
         st.write(f"**Tenor Duration:** {tenor_months} Months")
         st.write(
@@ -213,6 +201,4 @@ if not df_vehicles.empty:
         )
 
 else:
-    st.info(
-        "Please place `Price_LIST_RMC_ACCESSORIES.xlsx` in the project root directory."
-    )
+    st.info("Please place `Price_LIST_RMC_ACCESSORIES.xlsx` in the project root directory.")
