@@ -351,33 +351,106 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# PDF EXPORT (HTML Download)
+# FULL HTML REPORT FOR PDF EXPORT
 # ---------------------------------------------------------
 html_report = f"""
-<h2>Vehicle Finance Summary</h2>
+<html>
+<head>
+<style>
+body {{
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}}
+.section {{
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}}
+.red-box {{
+    background-color: #ffe5e5;
+    border: 2px solid #ff4d4d;
+}}
+.white-box {{
+    background-color: #ffffff;
+    border: 2px solid #ff4d4d;
+}}
+.header {{
+    color: #cc0000;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 10px;
+}}
+.subheader {{
+    color: #cc0000;
+    font-weight: 700;
+    font-size: 20px;
+    margin-top: 15px;
+}}
+.req-box {{
+    background-color: #fff5f5;
+    border-left: 5px solid #cc0000;
+    padding: 18px;
+    border-radius: 8px;
+    margin-top: 10px;
+}}
+</style>
+</head>
+<body>
 
-<h3>Vehicle & Cost Breakdown</h3>
-Model Year: {model_year}<br>
-Description: {selected_description}<br>
-Variant (SAP): {selected_variant}<br>
-Option Code: {selected_option}<br><br>
+<h1 class="header">Vehicle Finance Summary</h1>
 
-<b>MMC Total:</b> AED {mmc_total:,.2f}<br>
-<b>Accessories Total:</b> AED {accessories_total:,.2f}<br>
-<b>RMC Total:</b> AED {rmc_total:,.2f}<br>
+<div class="section red-box">
+<h2 class="subheader">Vehicle & Cost Breakdown</h2>
+<b>Model Year:</b> {model_year}<br>
+<b>Description:</b> {selected_description}<br>
+<b>Variant (SAP):</b> {selected_variant}<br>
+<b>Option Code:</b> {selected_option}<br><br>
+
+<h3>MMC / Units</h3>
+<b>Units:</b> {no_of_units}<br>
+<b>MMC Total:</b> AED {mmc_total:,.2f}<br><br>
+
+<h3>Accessories</h3>
+<b>Description:</b> {accessory_description if accessory_description else "—"}<br>
+<b>Selected Accessories:</b> {', '.join(selected_accessories) if selected_accessories else "None"}<br>
+<b>Total Accessories:</b> AED {accessories_total:,.2f}<br><br>
+
+<h3>RMC</h3>
+<b>Package:</b> {selected_rmc}<br>
+<b>RMC Total:</b> AED {rmc_total:,.2f}<br><br>
+
+<h3>VAT & Fees</h3>
 <b>VAT:</b> AED {vat_total:,.2f}<br>
 <b>VAT on Interest:</b> AED {vat_on_interest:,.2f}<br>
-<b>Total Price:</b> AED {total_price:,.2f}<br><br>
+<b>Documentation Fee:</b> AED {documentation_fee_total:,.2f}<br>
+<b>Mortgage Fee:</b> AED {mortgage_fee_total:,.2f}<br>
+<b>Mortgage Release Fee:</b> AED {mortgage_release_fee_total:,.2f}<br><br>
 
-<h3>Finance Summary</h3>
+<h3>Total Price</h3>
+<b>Grand Total:</b> AED {total_price:,.2f}<br>
+</div>
+
+<div class="section white-box">
+<h2 class="subheader">Finance Summary</h2>
+
+<h3>Down Payment</h3>
 <b>DP Base:</b> AED {dp_base:,.2f}<br>
-<b>Down Payment:</b> AED {down_payment:,.2f}<br>
+<b>Down Payment ({dp_percent*100:.0f}%):</b> AED {dp_portion:,.2f}<br>
+<b>Total Down Payment:</b> AED {down_payment:,.2f}<br><br>
+
+<h3>Loan Details</h3>
 <b>Principal Financed:</b> AED {principal_financed:,.2f}<br>
 <b>Total Interest:</b> AED {total_interest:,.2f}<br>
-<b>Loan Amount:</b> AED {loan_amount:,.2f}<br>
-<b>Monthly EMI:</b> AED {emi:,.2f}<br><br>
+<b>Loan Amount:</b> AED {loan_amount:,.2f}<br><br>
 
-<h3>Required Documents</h3>
+<h3>EMI Plan</h3>
+<b>Tenor:</b> {tenor} months<br>
+<b>Interest Rate:</b> {interest_rate*100:.2f}%<br>
+<b>Monthly EMI:</b> AED {emi:,.2f}<br>
+</div>
+
+<h2 class="header">Required Documents</h2>
+<div class="req-box">
 <ul>
 <li>Valid Trade License Copy – All three pages for LLC</li>
 <li>Valid Passport Copies of all partners including the sponsor</li>
@@ -391,6 +464,10 @@ Option Code: {selected_option}<br><br>
 <li>VAT Return Statements & Receipts (last two quarters)</li>
 <li>10 recent invoice copies (sales & purchase)</li>
 </ul>
+</div>
+
+</body>
+</html>
 """
 
 st.download_button(
@@ -400,4 +477,4 @@ st.download_button(
     mime="text/html"
 )
 
-st.success("Report generated with Mitsubishi theme, requirements, and export option.")
+st.success("Report generated with Mitsubishi theme, requirements, and full export.")
