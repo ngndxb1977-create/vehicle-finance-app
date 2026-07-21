@@ -159,16 +159,11 @@ interest_rate = st.sidebar.number_input(
 dp_percent = st.sidebar.slider("Down Payment %", 0, 100, 25) / 100
 
 # ---------------------------------------------------------
-# VAT Calculations
+# VAT Calculations (excluding VAT on interest for now)
 # ---------------------------------------------------------
 vat_rate = 0.05
 
 vat_total = (mmc_total + accessories_total + rmc_price) * vat_rate
-
-if interest_rate == 0:
-    vat_on_interest = 0
-else:
-    vat_on_interest = total_interest * vat_rate
 
 # ---------------------------------------------------------
 # Fees (incl. VAT)
@@ -178,19 +173,10 @@ mortgage_fee_total = 100 * 1.05 * no_of_units
 mortgage_release_fee_total = 100 * 1.05 * no_of_units
 
 # ---------------------------------------------------------
-# Down Payment
+# Down Payment base and portion
 # ---------------------------------------------------------
 dp_base = mmc_total + accessories_total + rmc_price
 dp_portion = dp_base * dp_percent
-
-down_payment = (
-    dp_portion +
-    vat_total +
-    vat_on_interest +
-    documentation_fee_total +
-    mortgage_fee_total +
-    mortgage_release_fee_total
-)
 
 # ---------------------------------------------------------
 # Principal Financed
@@ -201,6 +187,23 @@ principal_financed = dp_base - dp_portion
 # Flat Interest
 # ---------------------------------------------------------
 total_interest = principal_financed * interest_rate
+
+# ---------------------------------------------------------
+# VAT on Interest (correct: based on total interest)
+# ---------------------------------------------------------
+vat_on_interest = total_interest * vat_rate
+
+# ---------------------------------------------------------
+# Down Payment (final)
+# ---------------------------------------------------------
+down_payment = (
+    dp_portion +
+    vat_total +
+    vat_on_interest +
+    documentation_fee_total +
+    mortgage_fee_total +
+    mortgage_release_fee_total
+)
 
 # ---------------------------------------------------------
 # Loan Amount
@@ -278,4 +281,4 @@ st.write(f"**Tenor:** {tenor} months")
 st.write(f"**Interest Rate:** {interest_rate*100:.2f}%")
 st.write(f"**Monthly EMI:** {emi:,.2f}")
 
-st.success("App updated with model year filter, multi-accessory selection, RMC handling, and editable interest rate.")
+st.success("App updated with correct VAT on interest, model year filter, multi-accessory selection, RMC handling, and editable interest rate.")
