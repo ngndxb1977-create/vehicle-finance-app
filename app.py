@@ -67,6 +67,33 @@ down_payment = float(finance_df.loc[0, "Down Payment"])
 loan_amount = float(finance_df.loc[0, "Loan Amount"])
 
 # ---------------------------------------------------------
+# Tenor Selection + Interest Rate Logic
+# ---------------------------------------------------------
+st.sidebar.title("Finance Options")
+
+tenor = st.sidebar.slider("Select Tenor (Months)", 1, 24, 12)
+
+# Interest rate rules
+if tenor <= 3:
+    interest_rate = 0.0
+elif tenor <= 12:
+    interest_rate = 0.05
+else:
+    interest_rate = 0.06
+
+monthly_rate = interest_rate / 12
+
+# EMI Calculation
+if interest_rate == 0:
+    emi = loan_amount / tenor
+else:
+    emi = loan_amount * (
+        monthly_rate * (1 + monthly_rate)**tenor
+    ) / (
+        (1 + monthly_rate)**tenor - 1
+    )
+
+# ---------------------------------------------------------
 # Display Output
 # ---------------------------------------------------------
 st.title("Vehicle Finance Calculator")
@@ -79,8 +106,13 @@ st.write(f"**Option Code:** {selected_option}")
 st.write("### Price Breakdown")
 st.write(f"**Vehicle Price:** {vehicle_price:,.2f}")
 
-st.write("### Finance Details (from your finance file)")
+st.write("### Finance Details")
 st.write(f"**Down Payment:** {down_payment:,.2f}")
 st.write(f"**Loan Amount:** {loan_amount:,.2f}")
+st.write(f"**Tenor:** {tenor} months")
+st.write(f"**Interest Rate:** {interest_rate*100:.2f}%")
+
+st.write("### Monthly EMI")
+st.write(f"**EMI:** {emi:,.2f}")
 
 st.success("Calculation Completed Successfully")
