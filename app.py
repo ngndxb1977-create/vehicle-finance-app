@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 # ---------------------------------------------------------
 # Load Data
@@ -62,9 +61,26 @@ if filtered_final.empty:
 vehicle_price = float(filtered_final["PRICE"].values[0])
 
 # ---------------------------------------------------------
-# STOP HERE — DO NOT CALCULATE FINANCE UNTIL WE KNOW COLUMNS
+# Finance Values (from your finance file)
 # ---------------------------------------------------------
-st.warning("Finance calculation paused — waiting for correct column names from your finance file.")
+down_payment = float(finance_df.loc[0, "Down Payment"])
+loan_amount = float(finance_df.loc[0, "Loan Amount"])
 
-st.info("Please look at the 'Columns Found in Finance Calculator File' above and tell me the exact column names.")
+# ---------------------------------------------------------
+# Display Output
+# ---------------------------------------------------------
+st.title("Vehicle Finance Calculator")
 
+st.write("### Selected Vehicle Details")
+st.write(f"**Description:** {selected_description}")
+st.write(f"**Variant (SAP):** {selected_variant}")
+st.write(f"**Option Code:** {selected_option}")
+
+st.write("### Price Breakdown")
+st.write(f"**Vehicle Price:** {vehicle_price:,.2f}")
+
+st.write("### Finance Details (from your finance file)")
+st.write(f"**Down Payment:** {down_payment:,.2f}")
+st.write(f"**Loan Amount:** {loan_amount:,.2f}")
+
+st.success("Calculation Completed Successfully")
