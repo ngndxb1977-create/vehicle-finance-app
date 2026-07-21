@@ -104,7 +104,6 @@ if selected_accessories:
 else:
     accessory_price_single = 0.0
 
-# Multiply accessories by quantity
 accessories_total = (accessory_price_single + manual_accessories) * no_of_units
 
 # ---------------------------------------------------------
@@ -118,11 +117,7 @@ selected_rmc = st.sidebar.selectbox("Select RMC Package", ["None"] + rmc_options
 if selected_rmc != "None":
     if "Vehicle Model" in df_rmc.columns:
         match_rows = df_rmc[df_rmc["Vehicle Model"] == selected_description]
-
-        if not match_rows.empty:
-            raw_value = match_rows[selected_rmc].iloc[0]
-        else:
-            raw_value = df_rmc[selected_rmc].iloc[0]
+        raw_value = match_rows[selected_rmc].iloc[0] if not match_rows.empty else df_rmc[selected_rmc].iloc[0]
     else:
         raw_value = df_rmc[selected_rmc].iloc[0]
 
@@ -133,7 +128,6 @@ if selected_rmc != "None":
 else:
     rmc_price_single = 0.0
 
-# Multiply RMC by quantity
 rmc_total = rmc_price_single * no_of_units
 
 # ---------------------------------------------------------
@@ -160,7 +154,7 @@ vat_rate = 0.05
 vat_total = (mmc_total + accessories_total + rmc_total) * vat_rate
 
 # ---------------------------------------------------------
-# Fees (incl. VAT) — multiply by quantity
+# Fees (incl. VAT)
 # ---------------------------------------------------------
 documentation_fee_total = 200 * 1.05 * no_of_units
 mortgage_fee_total = 100 * 1.05 * no_of_units
@@ -178,7 +172,7 @@ dp_portion = dp_base * dp_percent
 principal_financed = dp_base - dp_portion
 
 # ---------------------------------------------------------
-# Flat Interest — multiply by quantity automatically
+# Flat Interest
 # ---------------------------------------------------------
 total_interest = principal_financed * interest_rate
 
@@ -225,55 +219,185 @@ total_price = (
 )
 
 # ---------------------------------------------------------
-# Display Output
+# Mitsubishi Red Theme Styling
 # ---------------------------------------------------------
-st.title("Vehicle Finance Calculator")
+st.title("Vehicle Finance Summary")
 
-st.write("### Vehicle Details")
-st.write(f"**Model Year:** {model_year}")
-st.write(f"**Description:** {selected_description}")
-st.write(f"**Variant (SAP):** {selected_variant}")
-st.write(f"**Option Code:** {selected_option}")
+st.markdown("""
+<style>
+.grid-box {
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.grid-red {
+    background-color: #ffe5e5;
+    border: 2px solid #ff4d4d;
+}
+.grid-white {
+    background-color: #ffffff;
+    border: 2px solid #ff4d4d;
+}
+.grid-header {
+    color: #cc0000;
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+.req-header {
+    color: #cc0000;
+    font-weight: 700;
+    font-size: 24px;
+    margin-top: 30px;
+}
+.req-box {
+    background-color: #fff5f5;
+    border-left: 5px solid #cc0000;
+    padding: 18px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+.req-item {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
 
-st.write("### MMC / Units")
-st.write(f"**No Of Units:** {no_of_units}")
-st.write(f"**MMC Total:** {mmc_total:,.2f}")
+grid1, grid2 = st.columns(2)
 
-st.write("### Accessories")
-st.write(f"**Accessory Description:** {accessory_description}")
-st.write(f"**Selected Accessories:** {', '.join(selected_accessories) if selected_accessories else 'None'}")
-st.write(f"**Accessories Price (single unit):** {accessory_price_single:,.2f}")
-st.write(f"**Manual Accessories (single unit):** {manual_accessories:,.2f}")
-st.write(f"**Total Accessories (all units):** {accessories_total:,.2f}")
+# ---------------------------------------------------------
+# GRID 1 — VEHICLE & COST BREAKDOWN
+# ---------------------------------------------------------
+with grid1:
+    st.markdown('<div class="grid-box grid-red">', unsafe_allow_html=True)
+    st.markdown('<div class="grid-header">Vehicle & Cost Breakdown</div>', unsafe_allow_html=True)
 
-st.write("### RMC")
-st.write(f"**Selected RMC Package:** {selected_rmc}")
-st.write(f"**RMC Price (single unit):** {rmc_price_single:,.2f}")
-st.write(f"**RMC Total (all units):** {rmc_total:,.2f}")
+    st.markdown(f"""
+    **Model Year:** {model_year}  
+    **Description:** {selected_description}  
+    **Variant (SAP):** {selected_variant}  
+    **Option Code:** {selected_option}  
 
-st.write("### VAT & Fees")
-st.write(f"**VAT:** {vat_total:,.2f}")
-st.write(f"**VAT on Interest:** {vat_on_interest:,.2f}")
-st.write(f"**Documentation Fee:** {documentation_fee_total:,.2f}")
-st.write(f"**Mortgage Fee:** {mortgage_fee_total:,.2f}")
-st.write(f"**Mortgage Release Fee:** {mortgage_release_fee_total:,.2f}")
+    ### MMC / Units
+    **Units:** {no_of_units}  
+    **MMC Total:** AED {mmc_total:,.2f}
 
-st.write("### Total Price")
-st.write(f"**Total Price:** {total_price:,.2f}")
+    ### Accessories
+    **Accessory Description:** {accessory_description if accessory_description else "—"}  
+    **Selected Accessories:** {', '.join(selected_accessories) if selected_accessories else "None"}  
+    **Accessories Total:** AED {accessories_total:,.2f}
 
-st.write("### Down Payment")
-st.write(f"**DP Base:** {dp_base:,.2f}")
-st.write(f"**DP Portion ({dp_percent*100:.0f}%):** {dp_portion:,.2f}")
-st.write(f"**Total Down Payment:** {down_payment:,.2f}")
+    ### RMC
+    **RMC Package:** {selected_rmc}  
+    **RMC Total:** AED {rmc_total:,.2f}
 
-st.write("### Loan Details")
-st.write(f"**Principal Financed:** {principal_financed:,.2f}")
-st.write(f"**Total Interest:** {total_interest:,.2f}")
-st.write(f"**Loan Amount:** {loan_amount:,.2f}")
+    ### VAT & Fees
+    **VAT:** AED {vat_total:,.2f}  
+    **VAT on Interest:** AED {vat_on_interest:,.2f}  
+    **Documentation Fee:** AED {documentation_fee_total:,.2f}  
+    **Mortgage Fee:** AED {mortgage_fee_total:,.2f}  
+    **Mortgage Release Fee:** AED {mortgage_release_fee_total:,.2f}
 
-st.write("### EMI")
-st.write(f"**Tenor:** {tenor} months")
-st.write(f"**Interest Rate:** {interest_rate*100:.2f}%")
-st.write(f"**Monthly EMI:** {emi:,.2f}")
+    ### Total Price
+    **Grand Total:** AED {total_price:,.2f}
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-st.success("All quantity-related calculations fixed: accessories, RMC, fees, VAT, interest, EMI now scale correctly.")
+# ---------------------------------------------------------
+# GRID 2 — FINANCE SUMMARY
+# ---------------------------------------------------------
+with grid2:
+    st.markdown('<div class="grid-box grid-white">', unsafe_allow_html=True)
+    st.markdown('<div class="grid-header">Finance Summary</div>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+    ### Down Payment
+    **DP Base:** AED {dp_base:,.2f}  
+    **Down Payment ({dp_percent*100:.0f}%):** AED {dp_portion:,.2f}  
+    **Total Down Payment:** AED {down_payment:,.2f}
+
+    ### Loan Details
+    **Principal Financed:** AED {principal_financed:,.2f}  
+    **Total Interest:** AED {total_interest:,.2f}  
+    **Loan Amount:** AED {loan_amount:,.2f}
+
+    ### EMI Plan
+    **Tenor:** {tenor} months  
+    **Interest Rate:** {interest_rate*100:.2f}%  
+    **Monthly EMI:** AED {emi:,.2f}
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# REQUIREMENTS SECTION
+# ---------------------------------------------------------
+st.markdown('<div class="req-header">Required Documents</div>', unsafe_allow_html=True)
+
+st.markdown("""
+<div class="req-box">
+    <div class="req-item">• Valid Trade License Copy – All three pages for LLC</div>
+    <div class="req-item">• Valid Passport Copies of all partners including the sponsor</div>
+    <div class="req-item">• Valid UAE Residence Visa Copies for all expatriate partners</div>
+    <div class="req-item">• Address page mandatory for Indian passport holders</div>
+    <div class="req-item">• Valid Emirates ID (front & back) for the signatory</div>
+    <div class="req-item">• Memorandum of Association & all amendment copies</div>
+    <div class="req-item">• Last six months bank statements</div>
+    <div class="req-item">• VAT Certificate Copy</div>
+    <div class="req-item">• Tenancy Contract Copy</div>
+    <div class="req-item">• VAT Return Statements & Receipts (last two quarters)</div>
+    <div class="req-item">• 10 recent invoice copies (sales & purchase)</div>
+</div>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# PDF EXPORT (HTML Download)
+# ---------------------------------------------------------
+html_report = f"""
+<h2>Vehicle Finance Summary</h2>
+
+<h3>Vehicle & Cost Breakdown</h3>
+Model Year: {model_year}<br>
+Description: {selected_description}<br>
+Variant (SAP): {selected_variant}<br>
+Option Code: {selected_option}<br><br>
+
+<b>MMC Total:</b> AED {mmc_total:,.2f}<br>
+<b>Accessories Total:</b> AED {accessories_total:,.2f}<br>
+<b>RMC Total:</b> AED {rmc_total:,.2f}<br>
+<b>VAT:</b> AED {vat_total:,.2f}<br>
+<b>VAT on Interest:</b> AED {vat_on_interest:,.2f}<br>
+<b>Total Price:</b> AED {total_price:,.2f}<br><br>
+
+<h3>Finance Summary</h3>
+<b>DP Base:</b> AED {dp_base:,.2f}<br>
+<b>Down Payment:</b> AED {down_payment:,.2f}<br>
+<b>Principal Financed:</b> AED {principal_financed:,.2f}<br>
+<b>Total Interest:</b> AED {total_interest:,.2f}<br>
+<b>Loan Amount:</b> AED {loan_amount:,.2f}<br>
+<b>Monthly EMI:</b> AED {emi:,.2f}<br><br>
+
+<h3>Required Documents</h3>
+<ul>
+<li>Valid Trade License Copy – All three pages for LLC</li>
+<li>Valid Passport Copies of all partners including the sponsor</li>
+<li>Valid UAE Residence Visa Copies for all expatriate partners</li>
+<li>Address page mandatory for Indian passport holders</li>
+<li>Valid Emirates ID (front & back) for the signatory</li>
+<li>Memorandum of Association & all amendment copies</li>
+<li>Last six months bank statements</li>
+<li>VAT Certificate Copy</li>
+<li>Tenancy Contract Copy</li>
+<li>VAT Return Statements & Receipts (last two quarters)</li>
+<li>10 recent invoice copies (sales & purchase)</li>
+</ul>
+"""
+
+st.download_button(
+    label="📄 Download HTML for PDF/Print",
+    data=html_report,
+    file_name="vehicle_finance_summary.html",
+    mime="text/html"
+)
+
+st.success("Report generated with Mitsubishi theme, requirements, and export option.")
