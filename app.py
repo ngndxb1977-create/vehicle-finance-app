@@ -2,61 +2,112 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# -----------------------------
+# ---------------------------------------------------------
 # Load Data
-# -----------------------------
+# ---------------------------------------------------------
 @st.cache_data
 def load_price_data():
-    return pd.read_excel("Price_LIST_RMC_ACCESSORIES.xlsx")
+    df = pd.read_excel("Price_LIST_RMC_ACCESSORIES.xlsx")
+    df.columns = df.columns.str.strip()  # Remove hidden spaces
+    return df
 
 @st.cache_data
 def load_finance_data():
-    return pd.read_excel("Vehicle Finance Calculator.xlsx")
+    df = pd.read_excel("Vehicle Finance Calculator.xlsx")
+    df.columns = df.columns.str.strip()
+    return df
 
 price_df = load_price_data()
 finance_df = load_finance_data()
 
-# -----------------------------
+# ---------------------------------------------------------
+# Debug: Show columns so app never crashes silently
+# ---------------------------------------------------------
+st.write("### Columns Found in Price List File")
+st.write(price_df.columns.tolist())
+
+# Expected column names (update these if your Excel differs)
+EXPECTED_MY = "MY"
+EXPECTED_MODEL_NAME = "Model_Name"
+EXPECTED_MODEL_CODE = "Model_Code"
+EXPECTED_RMC = "RMC"
+EXPECTED_ACCESSORY = "Accessories"
+
+# ---------------------------------------------------------
+# Validate Columns
+# ---------------------------------------------------------
+missing_columns = [
+    col for col in [EXPECTED_MY, EXPECTED_MODEL_NAME, EXPECTED_MODEL_CODE, EXPECTED_RMC, EXPECTED_ACCESSORY]
+    if col not in price_df.columns
+]
+
+if missing_columns:
+    st.error(f"❌ Missing columns in Excel file: {missing_columns}")
+    st.stop()
+
+# ---------------------------------------------------------
 # Sidebar Filters
-# -----------------------------
+# ---------------------------------------------------------
 st.sidebar.title("Vehicle Selection")
 
-selected_my = st.sidebar.selectbox("Model Year (MY)", sorted(price_df["MY"].unique()))
-selected_model = st.sidebar.selectbox("Model Name", sorted(price_df["Model_Name"].unique()))
-selected_code = st.sidebar.selectbox("Model Code", sorted(price_df["Model_Code"].unique()))
+selected_my = st.sidebar.selectbox(
+    "Model Year (MY)",
+    sorted(price_df[EXPECTED_MY].dropna().unique())
+)
+
+selected_model = st.sidebar.selectbox(
+    "Model Name",
+    sorted(price_df[EXPECTED_MODEL_NAME].dropna().unique())
+)
+
+selected_code = st.sidebar.selectbox(
+    "Model Code",
+    sorted(price_df[EXPECTED_MODEL_CODE].dropna().unique())
+)
 
 # Filter based on MY, Model Name, Model Code
 filtered_df = price_df[
-    (price_df["MY"] == selected_my) &
-    (price_df["Model_Name"] == selected_model) &
-    (price_df["Model_Code"] == selected_code)
+    (price_df[EXPECTED_MY] == selected_my) &
+    (price_df[EXPECTED_MODEL_NAME] == selected_model) &
+    (price_df[EXPECTED_MODEL_CODE] == selected_code)
 ]
 
-# RMC & Accessories dropdowns based on filtered data
-selected_rmc = st.sidebar.selectbox("RMC", sorted(filtered_df["RMC"].unique()))
-selected_accessory = st.sidebar.selectbox("Accessories", sorted(filtered_df["Accessories"].unique()))
+if filtered_df.empty:
+    st.error("❌ No matching vehicle found. Please adjust your selections.")
+    st.stop()
 
-# -----------------------------
+selected_rmc = st.sidebar.selectbox(
+    "RMC",
+    sorted(filtered_df[EXPECTED_RMC].dropna().unique())
+)
+
+selected_accessory = st.sidebar.selectbox(
+    "Accessories",
+    sorted(filtered_df[EXPECTED_ACCESSORY].dropna().unique())
+)
+
+# ---------------------------------------------------------
 # Finance Logic
-# -----------------------------
-# Extract finance parameters
-interest_rate = finance_df.loc[0, "Interest_Rate"]
+# ---------------------------------------------------------
+interest_rate = float(finance_df.loc[0, "Interest_Rate"])
 tenure = int(finance_df.loc[0, "Tenure"])
-down_payment_pct = finance_df.loc[0, "Down_Payment_Percentage"]
+down_payment_pct = float(finance_df.loc[0, "Down_Payment_Percentage"])
 
-# Calculate values
-vehicle_price = selected_rmc + selected_accessory
+vehicle_price = float(selected_rmc) + float(selected_accessory)
 down_payment = vehicle_price * down_payment_pct
 loan_amount = vehicle_price - down_payment
 
 monthly_rate = interest_rate / 12
 
-# EMI Formula
-emi = loan_amount * (monthly_rate * (1 + monthly_rate)**tenure) / ((1 + monthly_rate)**tenure - 1)
+emi = loan_amount * (
+    monthly_rate * (1 + monthly_rate)**tenure
+) / (
+    (1 + monthly_rate)**tenure - 1
+)
 
-# -----------------------------
+# ---------------------------------------------------------
 # Display Output
-# -----------------------------
+# ---------------------------------------------------------
 st.title("Vehicle Finance Calculator")
 
 st.write("### Selected Vehicle Details")
