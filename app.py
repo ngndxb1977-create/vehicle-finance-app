@@ -8,7 +8,7 @@ import numpy as np
 @st.cache_data
 def load_price_data():
     df = pd.read_excel("Price_LIST_RMC_ACCESSORIES.xlsx")
-    df.columns = df.columns.str.strip()  # Clean column names
+    df.columns = df.columns.str.strip()
     return df
 
 @st.cache_data
@@ -26,8 +26,11 @@ finance_df = load_finance_data()
 st.write("### Columns Found in Price List File")
 st.write(price_df.columns.tolist())
 
+st.write("### Columns Found in Finance Calculator File")
+st.write(finance_df.columns.tolist())
+
 # ---------------------------------------------------------
-# Sidebar Filters (based on actual columns)
+# Sidebar Filters (based on actual price list columns)
 # ---------------------------------------------------------
 st.sidebar.title("Vehicle Selection")
 
@@ -59,39 +62,9 @@ if filtered_final.empty:
 vehicle_price = float(filtered_final["PRICE"].values[0])
 
 # ---------------------------------------------------------
-# Finance Logic
+# STOP HERE — DO NOT CALCULATE FINANCE UNTIL WE KNOW COLUMNS
 # ---------------------------------------------------------
-interest_rate = float(finance_df.loc[0, "Interest_Rate"])
-tenure = int(finance_df.loc[0, "Tenure"])
-down_payment_pct = float(finance_df.loc[0, "Down_Payment_Percentage"])
+st.warning("Finance calculation paused — waiting for correct column names from your finance file.")
 
-down_payment = vehicle_price * down_payment_pct
-loan_amount = vehicle_price - down_payment
+st.info("Please look at the 'Columns Found in Finance Calculator File' above and tell me the exact column names.")
 
-monthly_rate = interest_rate / 12
-
-emi = loan_amount * (
-    monthly_rate * (1 + monthly_rate)**tenure
-) / (
-    (1 + monthly_rate)**tenure - 1
-)
-
-# ---------------------------------------------------------
-# Display Output
-# ---------------------------------------------------------
-st.title("Vehicle Finance Calculator")
-
-st.write("### Selected Vehicle Details")
-st.write(f"**Description:** {selected_description}")
-st.write(f"**Variant (SAP):** {selected_variant}")
-st.write(f"**Option Code:** {selected_option}")
-
-st.write("### Price Breakdown")
-st.write(f"**Vehicle Price:** {vehicle_price:,.2f}")
-
-st.write("### Finance Calculation")
-st.write(f"**Down Payment ({down_payment_pct*100:.0f}%):** {down_payment:,.2f}")
-st.write(f"**Loan Amount:** {loan_amount:,.2f}")
-st.write(f"**Monthly EMI:** {emi:,.2f}")
-
-st.success("Calculation Completed Successfully")
