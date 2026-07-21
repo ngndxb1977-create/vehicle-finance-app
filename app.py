@@ -38,7 +38,15 @@ selected_option = st.sidebar.selectbox(
 
 filtered_final = filtered_variant[filtered_variant["OTPION CODE"] == selected_option]
 
-vehicle_base_price = float(filtered_final["PRICE"].values[0])
+vehicle_price = float(filtered_final["PRICE"].values[0])
+
+# ---------------------------------------------------------
+# MMC Quantity Selector
+# ---------------------------------------------------------
+st.sidebar.title("MMC Options")
+mmc_units = st.sidebar.number_input("MMC Units", min_value=1, value=1)
+
+mmc_total = vehicle_price * mmc_units
 
 # ---------------------------------------------------------
 # Additional Cost Inputs
@@ -73,36 +81,39 @@ monthly_rate = interest_rate / 12
 # ---------------------------------------------------------
 vat_rate = 0.05
 
-# VAT on base price + accessories + RMC
-vat_total = (vehicle_base_price + accessories + rmc) * vat_rate
+# VAT on MMC + Accessories + RMC
+vat_total = (mmc_total + accessories + rmc) * vat_rate
 
-# VAT on interest (only if interest > 0)
+# VAT on interest
 if interest_rate == 0:
     vat_on_interest = 0
 else:
-    vat_on_interest = (vehicle_base_price * interest_rate) * vat_rate
+    vat_on_interest = (mmc_total * interest_rate) * vat_rate
 
 # ---------------------------------------------------------
 # Fees (incl. VAT)
 # ---------------------------------------------------------
-documentation_fee = 210
-mortgage_fee = 105
-mortgage_release_fee = 105
+documentation_fee_total = 200 * 1.05 * mmc_units
+mortgage_fee_total = 100 * 1.05 * mmc_units
+mortgage_release_fee_total = 100 * 1.05 * mmc_units
 
 # ---------------------------------------------------------
-# Total Cost for Down Payment
+# Total Cost
 # ---------------------------------------------------------
 total_cost = (
-    vehicle_base_price +
+    mmc_total +
     accessories +
     rmc +
     vat_total +
     vat_on_interest +
-    documentation_fee +
-    mortgage_fee +
-    mortgage_release_fee
+    documentation_fee_total +
+    mortgage_fee_total +
+    mortgage_release_fee_total
 )
 
+# ---------------------------------------------------------
+# Down Payment
+# ---------------------------------------------------------
 down_payment = total_cost * dp_percent
 loan_amount = total_cost - down_payment
 
@@ -128,17 +139,20 @@ st.write(f"**Description:** {selected_description}")
 st.write(f"**Variant (SAP):** {selected_variant}")
 st.write(f"**Option Code:** {selected_option}")
 
+st.write("### MMC")
+st.write(f"**MMC Units:** {mmc_units}")
+st.write(f"**MMC Total:** {mmc_total:,.2f}")
+
 st.write("### Price Breakdown")
-st.write(f"**Base Price:** {vehicle_base_price:,.2f}")
 st.write(f"**Accessories:** {accessories:,.2f}")
 st.write(f"**RMC:** {rmc:,.2f}")
 st.write(f"**VAT:** {vat_total:,.2f}")
 st.write(f"**VAT on Interest:** {vat_on_interest:,.2f}")
 
 st.write("### Fees (incl. VAT)")
-st.write(f"**Documentation Fee:** {documentation_fee:,.2f}")
-st.write(f"**Mortgage Fee:** {mortgage_fee:,.2f}")
-st.write(f"**Mortgage Release Fee:** {mortgage_release_fee:,.2f}")
+st.write(f"**Documentation Fee Total:** {documentation_fee_total:,.2f}")
+st.write(f"**Mortgage Fee Total:** {mortgage_fee_total:,.2f}")
+st.write(f"**Mortgage Release Fee Total:** {mortgage_release_fee_total:,.2f}")
 
 st.write("### Total Cost")
 st.write(f"**Total Cost:** {total_cost:,.2f}")
