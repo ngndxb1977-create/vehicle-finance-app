@@ -39,10 +39,7 @@ model_year = st.sidebar.selectbox(
     ["MY 2026", "MY 2025"]
 )
 
-if model_year == "MY 2026":
-    price_df = df_2026
-else:
-    price_df = df_2025
+price_df = df_2026 if model_year == "MY 2026" else df_2025
 
 # ---------------------------------------------------------
 # Vehicle Selection
@@ -101,20 +98,21 @@ selected_accessories = st.sidebar.multiselect(
 )
 
 if selected_accessories:
-    accessory_price = df_accessories[
+    accessory_price_single = df_accessories[
         df_accessories["List Of Accessories"].isin(selected_accessories)
     ]["Price"].sum()
 else:
-    accessory_price = 0.0
+    accessory_price_single = 0.0
 
-accessories_total = accessory_price + manual_accessories
+# Multiply accessories by quantity
+accessories_total = (accessory_price_single + manual_accessories) * no_of_units
 
 # ---------------------------------------------------------
 # RMC Selection (with N/A handling)
 # ---------------------------------------------------------
 st.sidebar.title("RMC Selection")
 
-rmc_options = list(df_rmc.columns[1:])  # skip "Vehicle Model"
+rmc_options = list(df_rmc.columns[1:])
 selected_rmc = st.sidebar.selectbox("Select RMC Package", ["None"] + rmc_options)
 
 if selected_rmc != "None":
@@ -123,24 +121,20 @@ if selected_rmc != "None":
 
         if not match_rows.empty:
             raw_value = match_rows[selected_rmc].iloc[0]
-            try:
-                rmc_price = float(raw_value)
-            except:
-                rmc_price = 0.0
         else:
             raw_value = df_rmc[selected_rmc].iloc[0]
-            try:
-                rmc_price = float(raw_value)
-            except:
-                rmc_price = 0.0
     else:
         raw_value = df_rmc[selected_rmc].iloc[0]
-        try:
-            rmc_price = float(raw_value)
-        except:
-            rmc_price = 0.0
+
+    try:
+        rmc_price_single = float(raw_value)
+    except:
+        rmc_price_single = 0.0
 else:
-    rmc_price = 0.0
+    rmc_price_single = 0.0
+
+# Multiply RMC by quantity
+rmc_total = rmc_price_single * no_of_units
 
 # ---------------------------------------------------------
 # Finance Options (editable interest rate)
@@ -159,14 +153,14 @@ interest_rate = st.sidebar.number_input(
 dp_percent = st.sidebar.slider("Down Payment %", 0, 100, 25) / 100
 
 # ---------------------------------------------------------
-# VAT Calculations (excluding VAT on interest for now)
+# VAT Calculations
 # ---------------------------------------------------------
 vat_rate = 0.05
 
-vat_total = (mmc_total + accessories_total + rmc_price) * vat_rate
+vat_total = (mmc_total + accessories_total + rmc_total) * vat_rate
 
 # ---------------------------------------------------------
-# Fees (incl. VAT)
+# Fees (incl. VAT) — multiply by quantity
 # ---------------------------------------------------------
 documentation_fee_total = 200 * 1.05 * no_of_units
 mortgage_fee_total = 100 * 1.05 * no_of_units
@@ -175,7 +169,7 @@ mortgage_release_fee_total = 100 * 1.05 * no_of_units
 # ---------------------------------------------------------
 # Down Payment base and portion
 # ---------------------------------------------------------
-dp_base = mmc_total + accessories_total + rmc_price
+dp_base = mmc_total + accessories_total + rmc_total
 dp_portion = dp_base * dp_percent
 
 # ---------------------------------------------------------
@@ -184,12 +178,12 @@ dp_portion = dp_base * dp_percent
 principal_financed = dp_base - dp_portion
 
 # ---------------------------------------------------------
-# Flat Interest
+# Flat Interest — multiply by quantity automatically
 # ---------------------------------------------------------
 total_interest = principal_financed * interest_rate
 
 # ---------------------------------------------------------
-# VAT on Interest (correct: based on total interest)
+# VAT on Interest (correct)
 # ---------------------------------------------------------
 vat_on_interest = total_interest * vat_rate
 
@@ -221,7 +215,7 @@ emi = loan_amount / tenor
 total_price = (
     mmc_total +
     accessories_total +
-    rmc_price +
+    rmc_total +
     vat_total +
     vat_on_interest +
     documentation_fee_total +
@@ -248,13 +242,14 @@ st.write(f"**MMC Total:** {mmc_total:,.2f}")
 st.write("### Accessories")
 st.write(f"**Accessory Description:** {accessory_description}")
 st.write(f"**Selected Accessories:** {', '.join(selected_accessories) if selected_accessories else 'None'}")
-st.write(f"**Accessories Price (from list):** {accessory_price:,.2f}")
-st.write(f"**Manual Accessories:** {manual_accessories:,.2f}")
-st.write(f"**Total Accessories:** {accessories_total:,.2f}")
+st.write(f"**Accessories Price (single unit):** {accessory_price_single:,.2f}")
+st.write(f"**Manual Accessories (single unit):** {manual_accessories:,.2f}")
+st.write(f"**Total Accessories (all units):** {accessories_total:,.2f}")
 
 st.write("### RMC")
 st.write(f"**Selected RMC Package:** {selected_rmc}")
-st.write(f"**RMC Price:** {rmc_price:,.2f}")
+st.write(f"**RMC Price (single unit):** {rmc_price_single:,.2f}")
+st.write(f"**RMC Total (all units):** {rmc_total:,.2f}")
 
 st.write("### VAT & Fees")
 st.write(f"**VAT:** {vat_total:,.2f}")
@@ -281,4 +276,4 @@ st.write(f"**Tenor:** {tenor} months")
 st.write(f"**Interest Rate:** {interest_rate*100:.2f}%")
 st.write(f"**Monthly EMI:** {emi:,.2f}")
 
-st.success("App updated with correct VAT on interest, model year filter, multi-accessory selection, RMC handling, and editable interest rate.")
+st.success("All quantity-related calculations fixed: accessories, RMC, fees, VAT, interest, EMI now scale correctly.")
