@@ -61,7 +61,7 @@ rmc = st.sidebar.number_input("RMC (AED)", min_value=0.0, value=0.0)
 # ---------------------------------------------------------
 st.sidebar.title("Finance Options")
 
-tenor = st.sidebar.slider("Select Tenor (Months)", 1, 24, 12)
+tenor = st.sidebar.slider("Select Tenor (Months)", 1, 24, 6)
 dp_percent = st.sidebar.slider("Down Payment %", 0, 100, 25) / 100
 
 # ---------------------------------------------------------
@@ -84,21 +84,21 @@ vat_rate = 0.05
 # VAT on MMC + Accessories + RMC
 vat_total = (mmc_total + accessories + rmc) * vat_rate
 
-# VAT on interest
+# VAT on interest (on MMC only, as per your logic)
 if interest_rate == 0:
     vat_on_interest = 0
 else:
     vat_on_interest = (mmc_total * interest_rate) * vat_rate
 
 # ---------------------------------------------------------
-# Fees (incl. VAT)
+# Fees (incl. VAT) per MMC unit
 # ---------------------------------------------------------
 documentation_fee_total = 200 * 1.05 * mmc_units
 mortgage_fee_total = 100 * 1.05 * mmc_units
 mortgage_release_fee_total = 100 * 1.05 * mmc_units
 
 # ---------------------------------------------------------
-# Total Cost
+# Total Cost (for information)
 # ---------------------------------------------------------
 total_cost = (
     mmc_total +
@@ -112,9 +112,26 @@ total_cost = (
 )
 
 # ---------------------------------------------------------
-# Down Payment
+# CORRECT Down Payment Calculation (your Excel logic)
 # ---------------------------------------------------------
-down_payment = total_cost * dp_percent
+
+# Step 1: DP Base (only MMC + Accessories + RMC)
+dp_base = mmc_total + accessories + rmc
+
+# Step 2: Apply DP%
+dp_portion = dp_base * dp_percent
+
+# Step 3: Add mandatory fees (paid fully with down payment)
+down_payment = (
+    dp_portion +
+    vat_total +
+    vat_on_interest +
+    documentation_fee_total +
+    mortgage_fee_total +
+    mortgage_release_fee_total
+)
+
+# Step 4: Loan Amount
 loan_amount = total_cost - down_payment
 
 # ---------------------------------------------------------
@@ -141,7 +158,7 @@ st.write(f"**Option Code:** {selected_option}")
 
 st.write("### MMC")
 st.write(f"**MMC Units:** {mmc_units}")
-st.write(f"**MMC Total:** {mmc_total:,.2f}")
+st.write(f"**MMC Total (Base Vehicle Price):** {mmc_total:,.2f}")
 
 st.write("### Price Breakdown")
 st.write(f"**Accessories:** {accessories:,.2f}")
@@ -158,7 +175,9 @@ st.write("### Total Cost")
 st.write(f"**Total Cost:** {total_cost:,.2f}")
 
 st.write("### Down Payment")
-st.write(f"**Down Payment ({dp_percent*100:.0f}%):** {down_payment:,.2f}")
+st.write(f"**DP Base (MMC + Accessories + RMC):** {dp_base:,.2f}")
+st.write(f"**Down Payment Portion ({dp_percent*100:.0f}% of DP Base):** {dp_portion:,.2f}")
+st.write(f"**Total Down Payment (incl. VAT & Fees):** {down_payment:,.2f}")
 
 st.write("### Loan Amount")
 st.write(f"**Loan Amount:** {loan_amount:,.2f}")
