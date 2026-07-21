@@ -8,19 +8,17 @@ import pandas as pd
 def load_price_data():
     xls = pd.ExcelFile("Price_LIST_RMC_ACCESSORIES.xlsx")
 
-    # DEBUG: Show sheet names
-    st.write("Sheet names:", xls.sheet_names)
-
-
     # Normalize sheet names
     sheet_names = [name.strip() for name in xls.sheet_names]
+    sheet_names_lower = [name.lower() for name in sheet_names]
 
-    # Auto-detect sheets
-    sheet_2026 = next(name for name in sheet_names if "PRICE_LIST_MY_2026" in name)
-    sheet_2025 = next(name for name in sheet_names if "PRICE_LIST_MY_2025" in name)
-    sheet_rmc = next(name for name in sheet_names if name.upper() == "RMC")
-    sheet_accessories = next(name for name in sheet_names if "Accessories" in name)
+    # Case-insensitive sheet detection
+    sheet_2026 = sheet_names[sheet_names_lower.index("price_list_my_2026")]
+    sheet_2025 = sheet_names[sheet_names_lower.index("price_list_my_2025")]
+    sheet_rmc = sheet_names[sheet_names_lower.index("rmc")]
+    sheet_accessories = sheet_names[sheet_names_lower.index("accessories")]
 
+    # Load sheets
     df_2026 = pd.read_excel(xls, sheet_2026)
     df_2025 = pd.read_excel(xls, sheet_2025)
     df_rmc = pd.read_excel(xls, sheet_rmc)
