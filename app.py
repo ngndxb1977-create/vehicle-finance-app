@@ -168,7 +168,7 @@ vat_total = (mmc_total + accessories_total + rmc_price) * vat_rate
 if interest_rate == 0:
     vat_on_interest = 0
 else:
-    vat_on_interest = (mmc_total * interest_rate) * vat_rate
+    vat_on_interest = total_interest * vat_rate
 
 # ---------------------------------------------------------
 # Fees (incl. VAT)
