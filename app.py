@@ -2,29 +2,25 @@ import streamlit as st
 import pandas as pd
 
 # ---------------------------------------------------------
-# Load Data (auto-detect sheet names safely)
+# Load Data (case-insensitive sheet detection)
 # ---------------------------------------------------------
 @st.cache_data
 def load_price_data():
     xls = pd.ExcelFile("Price_LIST_RMC_ACCESSORIES.xlsx")
 
-    # Normalize sheet names
     sheet_names = [name.strip() for name in xls.sheet_names]
     sheet_names_lower = [name.lower() for name in sheet_names]
 
-    # Case-insensitive sheet detection
     sheet_2026 = sheet_names[sheet_names_lower.index("price_list_my_2026")]
     sheet_2025 = sheet_names[sheet_names_lower.index("price_list_my_2025")]
     sheet_rmc = sheet_names[sheet_names_lower.index("rmc")]
     sheet_accessories = sheet_names[sheet_names_lower.index("accessories")]
 
-    # Load sheets
     df_2026 = pd.read_excel(xls, sheet_2026)
     df_2025 = pd.read_excel(xls, sheet_2025)
     df_rmc = pd.read_excel(xls, sheet_rmc)
     df_accessories = pd.read_excel(xls, sheet_accessories)
 
-    # Clean column names
     for df in [df_2026, df_2025, df_rmc, df_accessories]:
         df.columns = df.columns.str.strip()
 
@@ -64,7 +60,7 @@ filtered_final = filtered_variant[filtered_variant["OTPION CODE"] == selected_op
 vehicle_price = float(filtered_final["PRICE"].values[0])
 
 # ---------------------------------------------------------
-# MMC Options (Renamed to No Of Units)
+# MMC Options (No Of Units)
 # ---------------------------------------------------------
 st.sidebar.title("MMC Options")
 no_of_units = st.sidebar.number_input("No Of Units", min_value=1, value=1)
@@ -76,11 +72,10 @@ mmc_total = vehicle_price * no_of_units
 # ---------------------------------------------------------
 st.sidebar.title("Additional Accessories")
 
-# Free-text accessory description
 accessory_description = st.sidebar.text_input("Accessory Description")
 
-# Accessories dropdown
-accessory_list = df_accessories["List of Accessories"].dropna().tolist()
+# Use exact column name: "List Of Accessories"
+accessory_list = df_accessories["List Of Accessories"].dropna().tolist()
 selected_accessory = st.sidebar.selectbox(
     "Select Accessory",
     ["None"] + accessory_list
@@ -88,7 +83,7 @@ selected_accessory = st.sidebar.selectbox(
 
 if selected_accessory != "None":
     accessory_price = float(
-        df_accessories[df_accessories["List of Accessories"] == selected_accessory]["Price"].values[0]
+        df_accessories[df_accessories["List Of Accessories"] == selected_accessory]["Price"].values[0]
     )
 else:
     accessory_price = 0.0
@@ -252,4 +247,4 @@ st.write(f"**Loan Amount:** {loan_amount:,.2f}")
 st.write("### EMI")
 st.write(f"**Monthly EMI:** {emi:,.2f}")
 
-st.success("All requested changes applied successfully.")
+st.success("All current fixes and column names applied successfully.")
