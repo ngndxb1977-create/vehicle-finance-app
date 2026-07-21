@@ -84,7 +84,7 @@ vat_rate = 0.05
 # VAT on MMC + Accessories + RMC
 vat_total = (mmc_total + accessories + rmc) * vat_rate
 
-# VAT on interest (on MMC only, as per your logic)
+# VAT on interest (on financed principal later, but we approximate on MMC base)
 if interest_rate == 0:
     vat_on_interest = 0
 else:
@@ -98,7 +98,7 @@ mortgage_fee_total = 100 * 1.05 * mmc_units
 mortgage_release_fee_total = 100 * 1.05 * mmc_units
 
 # ---------------------------------------------------------
-# Total Cost (for information)
+# Total Cost (informational)
 # ---------------------------------------------------------
 total_cost = (
     mmc_total +
@@ -112,7 +112,7 @@ total_cost = (
 )
 
 # ---------------------------------------------------------
-# CORRECT Down Payment Calculation (your Excel logic)
+# CORRECT Down Payment Calculation
 # ---------------------------------------------------------
 
 # Step 1: DP Base (only MMC + Accessories + RMC)
@@ -131,20 +131,29 @@ down_payment = (
     mortgage_release_fee_total
 )
 
-# Step 4: Loan Amount
-loan_amount = total_cost - down_payment
+# ---------------------------------------------------------
+# Principal Financed (only base, no VAT/fees)
+# ---------------------------------------------------------
+principal_financed = dp_base - dp_portion
 
 # ---------------------------------------------------------
-# EMI Calculation
+# EMI & Interest Calculation
 # ---------------------------------------------------------
 if interest_rate == 0:
-    emi = loan_amount / tenor
+    emi = principal_financed / tenor
+    total_payable_via_loan = principal_financed
+    total_interest = 0
 else:
-    emi = loan_amount * (
+    emi = principal_financed * (
         monthly_rate * (1 + monthly_rate)**tenor
     ) / (
         (1 + monthly_rate)**tenor - 1
     )
+    total_payable_via_loan = emi * tenor
+    total_interest = total_payable_via_loan - principal_financed
+
+# Loan amount the customer pays via installments = principal + interest
+loan_amount_with_interest = principal_financed + total_interest
 
 # ---------------------------------------------------------
 # Display Output
@@ -171,16 +180,18 @@ st.write(f"**Documentation Fee Total:** {documentation_fee_total:,.2f}")
 st.write(f"**Mortgage Fee Total:** {mortgage_fee_total:,.2f}")
 st.write(f"**Mortgage Release Fee Total:** {mortgage_release_fee_total:,.2f}")
 
-st.write("### Total Cost")
-st.write(f"**Total Cost:** {total_cost:,.2f}")
+st.write("### Total Cost (Informational)")
+st.write(f"**Total Cost (Vehicle + VAT + Fees):** {total_cost:,.2f}")
 
 st.write("### Down Payment")
 st.write(f"**DP Base (MMC + Accessories + RMC):** {dp_base:,.2f}")
 st.write(f"**Down Payment Portion ({dp_percent*100:.0f}% of DP Base):** {dp_portion:,.2f}")
 st.write(f"**Total Down Payment (incl. VAT & Fees):** {down_payment:,.2f}")
 
-st.write("### Loan Amount")
-st.write(f"**Loan Amount:** {loan_amount:,.2f}")
+st.write("### Loan Details")
+st.write(f"**Principal Financed:** {principal_financed:,.2f}")
+st.write(f"**Total Interest Over Tenor:** {total_interest:,.2f}")
+st.write(f"**Total via Installments (Principal + Interest):** {loan_amount_with_interest:,.2f}")
 
 st.write("### EMI Calculation")
 st.write(f"**Tenor:** {tenor} months")
