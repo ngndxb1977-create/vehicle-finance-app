@@ -1,9 +1,12 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-# Page setup
-st.set_page_config(page_title="Vehicle Finance Calculator", layout="wide")
-st.title("🚗 Vehicle Finance & Options Calculator")
+# Step 1: Load the Excel file and grab the first sheet automatically
+df = pd.read_excel("Price_LIST_RMC_ACCESSORIES.xlsx", sheet_name=0)
+
+# Step 2: Build your Streamlit app
+st.title("Price List & Accessories")
+st.dataframe(df)
 
 # 1. Load Data from Excel File
 @st.cache_data
