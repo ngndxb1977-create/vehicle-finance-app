@@ -8,6 +8,10 @@ import pandas as pd
 def load_price_data():
     xls = pd.ExcelFile("Price_LIST_RMC_ACCESSORIES.xlsx")
 
+    # DEBUG: Show sheet names
+    st.write("Sheet names:", xls.sheet_names)
+
+
     # Normalize sheet names
     sheet_names = [name.strip() for name in xls.sheet_names]
 
